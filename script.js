@@ -23,7 +23,30 @@ for (let i = 0; i < starCount; i++) {
   starVertices.push(x, y, z);
 }
 starGeometry.setAttribute('position', new THREE.Float32BufferAttribute(starVertices, 3));
-const starMaterial = new THREE.PointsMaterial({ color: 0xffffff });
+
+// Star color palette
+const starColorPalette = [
+  [1.0, 0.5, 0.5],   // soft red
+  [1.0, 0.75, 0.4],  // soft orange
+  [1.0, 1.0, 0.9],   // soft yellow-white
+  [1.0, 1.0, 1.0],   // white
+  [0.4, 0.5, 1.0]    // stronger blue
+];
+// Add initial color attribute for twinkle effect
+const starColors = [];
+for (let i = 0; i < starCount; i++) {
+  const color = starColorPalette[Math.floor(Math.random() * starColorPalette.length)];
+  starColors.push(...color);
+}
+starGeometry.setAttribute('color', new THREE.Float32BufferAttribute(starColors, 3));
+
+// Sparkle support arrays for prolonged twinkle
+const starOriginalColors = starGeometry.attributes.color.array.slice();
+const starTimers = new Float32Array(starCount);
+const starSparkColors = new Float32Array(starCount * 3);
+const sparkleDuration = 180; // frames to sustain twinkle (extended)
+
+const starMaterial = new THREE.PointsMaterial({ vertexColors: true, size: 1, sizeAttenuation: true });
 const stars = new THREE.Points(starGeometry, starMaterial);
 scene.add(stars);
 
@@ -82,6 +105,35 @@ function animateStars() {
     }
   }
   starGeometry.attributes.position.needsUpdate = true;
+
+  // Color sparkle for distant stars
+  const colors = starGeometry.attributes.color.array;
+  // reuse positions array declared earlier for repositioning
+  // sparkle settings
+  const sparkleThreshold = starMaxDistance * 0.3;
+  const sparkleChance = 0.05;
+  for (let i = 0; i < positions.length; i += 3) {
+    const idx = i / 3;
+    const dx = positions[i], dy = positions[i + 1], dz = positions[i + 2];
+    const dist = Math.sqrt(dx*dx + dy*dy + dz*dz);
+    if (starTimers[idx] > 0) {
+      starTimers[idx]--;
+    } else if (dist > sparkleThreshold && Math.random() < sparkleChance) {
+      starTimers[idx] = sparkleDuration;
+      const c = starColorPalette[Math.floor(Math.random() * starColorPalette.length)];
+      starSparkColors[i] = c[0]; starSparkColors[i+1] = c[1]; starSparkColors[i+2] = c[2];
+    }
+    if (starTimers[idx] > 0) {
+      colors[i] = starSparkColors[i]; colors[i+1] = starSparkColors[i+1]; colors[i+2] = starSparkColors[i+2];
+    } else {
+      colors[i] = starOriginalColors[i]; colors[i+1] = starOriginalColors[i+1]; colors[i+2] = starOriginalColors[i+2];
+    }
+  }
+  starGeometry.attributes.color.needsUpdate = true;
+
+  // slowly rotate starfield
+  stars.rotation.x += 0.0001;
+  stars.rotation.y += 0.00015;
 
   // Continuous shooting star spawn
   if (Math.random() < 0.02) spawnShootingStar();
@@ -156,6 +208,7 @@ const revealSections = () => {
   });
 };
 window.addEventListener('scroll', revealSections);
+
 
 // Overscroll shake effect
 window.addEventListener('wheel', (e) => {
