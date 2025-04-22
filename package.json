@@ -2,11 +2,14 @@
   "name": "portfolio",
   "version": "1.0.0",
   "private": true,
+  "homepage": "https://KayosDev.github.io/Portfolio-Website",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "export": "next build && next export",
-    "start": "next start"
+    "start": "next start",
+    "predeploy": "npm run build && npm run export",
+    "deploy": "gh-pages -d out --repo https://github.com/KayosDev/Portfolio-Website.git"
   },
   "dependencies": {
     "next": "13.4.10",
@@ -14,5 +17,8 @@
     "react-dom": "18.2.0",
     "framer-motion": "^10.12.16",
     "three": "^0.152.2"
+  },
+  "devDependencies": {
+    "gh-pages": "^4.0.0"
   }
 }
