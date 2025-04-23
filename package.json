@@ -12,8 +12,8 @@
     "deploy": "gh-pages -d out --repo https://github.com/KayosDev/Portfolio-Website.git"
   },
   "dependencies": {
-    "@react-three/drei": "^10.0.6",
-    "@react-three/fiber": "^9.1.2",
+    "@react-three/drei": "^9.77.1",
+    "@react-three/fiber": "^8.13.7",
     "@react-three/postprocessing": "^3.0.4",
     "framer-motion": "^10.12.16",
     "next": "13.4.10",
