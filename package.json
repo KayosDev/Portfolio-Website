@@ -12,9 +12,9 @@
     "deploy": "gh-pages -d out --repo https://github.com/KayosDev/Portfolio-Website.git"
   },
   "dependencies": {
+    "@react-spring/web": "^9.7.5",
     "@react-three/fiber": "9.1.2",
     "@react-three/postprocessing": "^3.0.4",
-    "framer-motion": "^10.12.16",
     "next": "^14.0.0",
     "react": "18.2.0",
     "react-dom": "18.2.0",

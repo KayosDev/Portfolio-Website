@@ -1,26 +1,23 @@
-import { useEffect } from 'react'
-import { motion, useMotionValue, useSpring } from 'framer-motion'
+import { useEffect, useRef } from 'react'
+import { useSpring, animated, to } from '@react-spring/web'
 
 export default function Cursor() {
-  const mouseX = useMotionValue(-100)
-  const mouseY = useMotionValue(-100)
-  const springConfig = { damping: 20, stiffness: 150 }
-  const cursorX = useSpring(mouseX, springConfig)
-  const cursorY = useSpring(mouseY, springConfig)
+  const [{ x, y }, api] = useSpring(() => ({ x: -100, y: -100, config: { tension: 300, friction: 30 } }))
+  const mousePos = useRef({ x: -100, y: -100 })
 
   useEffect(() => {
     const move = (e) => {
-      mouseX.set(e.clientX - 8)
-      mouseY.set(e.clientY - 8)
+      mousePos.current = { x: e.clientX - 8, y: e.clientY - 8 }
+      api.start({ x: mousePos.current.x, y: mousePos.current.y })
     }
     window.addEventListener('mousemove', move)
     return () => window.removeEventListener('mousemove', move)
-  }, [mouseX, mouseY])
+  }, [api])
 
   return (
     <>
-      <motion.div className="cursor-dot" style={{ translateX: cursorX, translateY: cursorY }} />
-      <motion.div className="cursor-outline" style={{ translateX: mouseX, translateY: mouseY }} />
+      <animated.div className="cursor-dot" style={{ transform: to([x, y], (xv, yv) => `translateX(${xv}px) translateY(${yv}px)`) }} />
+      <animated.div className="cursor-outline" style={{ transform: to([x, y], (xv, yv) => `translateX(${xv}px) translateY(${yv}px)`) }} />
     </>
   )
 }
