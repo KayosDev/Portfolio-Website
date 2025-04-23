@@ -1,5 +1,5 @@
-import React, { useEffect, useRef } from 'react'
-import * as THREE from 'three'
+import React, { useEffect, useRef } from 'react';
+import * as THREE from 'three';
 
 const Starfield = () => {
   const mountRef = useRef(null)
@@ -70,105 +70,236 @@ const Starfield = () => {
     }
     window.addEventListener('scroll', onScroll)
 
-    const tailLength = 50
-    const shootingStars = []
-    let shootingStarCooldown = 0; // Prevent too many at once
-    // Enhanced shooting star effect
+    // --- Shooting Stars ---
+    const tailLength = 50;
+    const shootingStars = [];
+    let shootingStarCooldown = 0;
+    // Spawn a shooting star with a glowing tail
     function spawnShootingStar() {
-      // Spawn farther away from camera, in the distance, and not directly in front
-      const minAngle = Math.PI / 10; // 18 degrees away from camera center
-      const maxAngle = Math.PI / 3;  // up to 60 degrees from camera center
-      const minDistance = 400; // never closer than this
-      const cameraDir = new THREE.Vector3();
-      camera.getWorldDirection(cameraDir);
-      let spawnDir, angleFromCenter;
-      do {
-        // Random angle between minAngle and maxAngle from camera direction
-        angleFromCenter = minAngle + (maxAngle - minAngle) * Math.random();
-        // Random azimuth
-        const azimuth = Math.random() * 2 * Math.PI;
-        // Spherical coordinates
-        spawnDir = cameraDir.clone();
-        // Rotate spawnDir by angleFromCenter around a random perpendicular axis
-        const axis = new THREE.Vector3(Math.cos(azimuth), Math.sin(azimuth), 0).normalize();
-        spawnDir.applyAxisAngle(axis, angleFromCenter).normalize();
-      } while (spawnDir.dot(cameraDir) > Math.cos(minAngle));
-      const distance = minDistance + Math.random() * (starMaxDistance - minDistance);
-      const startPos = camera.position.clone().add(spawnDir.clone().multiplyScalar(distance));
-      // Ensure direction is always away from camera
-      const away = spawnDir;
-      // Add a small random perpendicular component for variety
-      let perp = new THREE.Vector3(Math.random()*2-1, Math.random()*2-1, Math.random()*2-1);
-      perp = perp.sub(perp.clone().projectOnVector(away)).normalize();
-      const dir = away.clone().add(perp.multiplyScalar(Math.random() * 0.5)).normalize();
-      // Make the speed much slower
-      const speed = starSpeed * (10 + Math.random() * 10); // 10-20 units per frame
-      const geo = new THREE.SphereGeometry(1, 8, 8); // Smaller, more distant
-      const mat = new THREE.MeshBasicMaterial({ color: 0xffffee, emissive: 0xffffee, emissiveIntensity: 2 });
+      // Pick a random direction on the sphere for the spawn location
+      const dir = new THREE.Vector3(Math.random()*2-1, Math.random()*2-1, Math.random()*2-1).normalize();
+      const minDist = starMaxDistance * 0.8;
+      const maxDist = starMaxDistance * 1.0;
+      const dist = minDist + Math.random() * (maxDist - minDist);
+      // Place the star at the distant edge
+      const spawnPos = dir.clone().multiplyScalar(dist);
+      // Tangential velocity: perpendicular to dir
+      let tangent = new THREE.Vector3(Math.random()*2-1, Math.random()*2-1, Math.random()*2-1);
+      tangent = tangent.sub(tangent.clone().projectOnVector(dir)).normalize();
+      // Mix in a small radial component (inward or outward)
+      const tangentialSpeed = starSpeed * (0.5 + Math.random() * 1.5);
+      const radialSpeed = starSpeed * (Math.random() - 0.5) * 0.2; // small inward/outward
+      const velocity = tangent.multiplyScalar(tangentialSpeed).add(dir.clone().multiplyScalar(radialSpeed));
+      // Star color: random white/yellow/blue
+      const colors = [0xffffee, 0xfff2cc, 0xcce6ff, 0xffffff];
+      const color = colors[Math.floor(Math.random()*colors.length)];
+      // Star brightness
+      const brightness = 1.2 + Math.random()*1.5;
+      const geo = new THREE.SphereGeometry(1.5 + Math.random(), 16, 16);
+      const mat = new THREE.MeshBasicMaterial({ color: color });
+      mat.opacity = 0.7 + Math.random()*0.3;
+      mat.baseOpacity = mat.opacity; // Save for fade logic
+      mat.transparent = true;
       const star = new THREE.Mesh(geo, mat);
-      star.position.copy(startPos);
-      star.velocity = dir.clone().multiplyScalar(speed);
-      star.life = 1.0;
-
-      // Pretty, glowing tail using points (sprites) instead of a line
-      const tailLen = 200 + Math.random() * 100;
-      const tailSegments = 24;
-      const tailPoints = [];
-      const tailColors = [];
-      for (let i = 0; i < tailSegments; i++) {
-        // Position along the tail
-        const t = i / (tailSegments - 1);
-        // Position fades away from the star
-        tailPoints.push(dir.clone().negate().multiplyScalar(tailLen * t));
-        // Color/alpha: bright at head, fades at tail
-        const alpha = (1 - t) * 0.7;
-        // Soft yellow-white gradient
-        tailColors.push(1.0, 1.0, 0.85, alpha);
+      star.position.copy(spawnPos);
+      star.velocity = velocity;
+      star.normalizedLife = 0.0; // Start at 0, will increase to 1.0
+      star.normalizedLifetime = 60 + Math.random() * 30; // Shorter normalizedLifetime: 60-90 frames
+      star.age = 0; // Track age in frames
+      // --- Realistic Meteor Tail (multi-point, gradient, fading) ---
+      const trailSegments = 12;
+      const trailPoints = [];
+      for (let i = 0; i < trailSegments; i++) {
+        trailPoints.push(star.position.clone());
       }
-      const tailGeo = new THREE.BufferGeometry();
-      tailGeo.setFromPoints(tailPoints);
+      const tailGeo = new THREE.BufferGeometry().setFromPoints(trailPoints);
+      // Per-vertex color (alpha gradient)
+      const tailColors = [];
+      for (let i = 0; i < trailSegments; i++) {
+        // Alpha fades out along the tail
+        const alpha = (1 - i / (trailSegments - 1)) * 0.7;
+        // Color shifts from head color to faint orange
+        const gradientColor = i === 0 ? color : 0xffc080;
+        tailColors.push((gradientColor >> 16 & 255) / 255, (gradientColor >> 8 & 255) / 255, (gradientColor & 255) / 255, alpha);
+      }
       tailGeo.setAttribute('color', new THREE.Float32BufferAttribute(tailColors, 4));
-      // Use a round sprite for each point
-      const sprite = new THREE.TextureLoader().load('https://cdn.jsdelivr.net/gh/mrdoob/three.js@master/examples/textures/sprites/circle.png');
-      const tailMat = new THREE.PointsMaterial({
-        size: 16,
-        map: sprite,
-        vertexColors: true,
-        transparent: true,
-        depthWrite: false,
-        blending: THREE.AdditiveBlending,
-      });
-      const tail = new THREE.Points(tailGeo, tailMat);
+      // Additive blending for glow
+      const tailMat = new THREE.LineBasicMaterial({ vertexColors: true, transparent: true, opacity: 1.0, blending: THREE.AdditiveBlending });
+      const tail = new THREE.Line(tailGeo, tailMat);
       tail.position.copy(star.position);
-      tail.life = 1.0;
+      // Add to scene
       scene.add(star);
       scene.add(tail);
-      shootingStars.push({ mesh: star, tail, velocity: star.velocity, dir, fade: false, tailPoints });
+      shootingStars.push({ mesh: star, tail, velocity: star.velocity, dir, age: 0, normalizedLifetime: star.normalizedLifetime, trailPoints, color, brightness, hasFragmented: false });
     }
 
     const animate = () => {
-      requestAnimationFrame(animate)
-      camera.rotation.y += (targetY - camera.rotation.y) * damping
-      camera.translateZ(-starSpeed)
+      requestAnimationFrame(animate);
+      camera.rotation.y += (targetY - camera.rotation.y) * damping;
+      camera.translateZ(-starSpeed);
 
-      // Spawn shooting star occasionally, but not too frequently
-      // Decrease shooting star frequency for a more subtle effect
-      if (shootingStarCooldown <= 0 && Math.random() < 0.05) { // 5% chance per frame
+      // --- Shooting star spawning ---
+      // DEV: Make shooting stars super common (spawn every frame if cooldown allows)
+      if (shootingStarCooldown <= 0 && Math.random() < 1.0) { // Shooting Star Spawn Rate
         spawnShootingStar();
-        shootingStarCooldown = 30 + Math.random() * 40; // 0.5-1.2 seconds
+        shootingStarCooldown = 2 + Math.random() * 2; // Very short cooldown
       } else if (shootingStarCooldown > 0) {
         shootingStarCooldown--;
       }
+      // Animate shooting stars
+      for (let i = shootingStars.length - 1; i >= 0; i--) {
+        const obj = shootingStars[i];
+        // --- Curved trajectory: add small perpendicular acceleration ---
+        let perp = new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5);
+        perp = perp.sub(perp.clone().projectOnVector(obj.velocity)).normalize().multiplyScalar(0.003 + Math.random()*0.003);
+        obj.velocity.add(perp);
+        obj.velocity.normalize().multiplyScalar(obj.velocity.length()); // keep speed stable
+        obj.mesh.position.add(obj.velocity);
+        obj.tail.position.copy(obj.mesh.position);
+        // --- Animate multi-point tail ---
+        obj.age++;
+        const normalizedLife = obj.age / obj.normalizedLifetime;
+        // Shift trail points
+        obj.trailPoints.pop();
+        obj.trailPoints.unshift(obj.mesh.position.clone());
+        // Animate tail grow: first 30% of life
+        let tailGrow = Math.min(1, normalizedLife / 0.3);
+        let activeSegments = Math.floor(obj.trailPoints.length * tailGrow);
+        if (activeSegments < 2) activeSegments = 2;
+        const visibleTrail = obj.trailPoints.slice(0, activeSegments);
+        obj.tail.geometry.setFromPoints(visibleTrail);
+        // Animate tail color/alpha gradient (rainbow + flicker + width taper)
+        const tailColors = obj.tail.geometry.getAttribute('color');
+        for (let j = 0; j < visibleTrail.length; j++) {
+          // Alpha fades out along the tail, with high-freq flicker
+          let alpha = (1 - j / (visibleTrail.length - 1)) * 0.7;
+          alpha *= 0.8 + 0.2 * Math.sin(Date.now()*0.03 + j*0.8 + Math.random()*10);
+          // Chromatic aberration: rainbow gradient
+          let rainbow = [0xffc080, 0xffe080, 0xffff80, 0x80ffe6, 0x80c0ff, 0xc080ff];
+          let gradColor = rainbow[j % rainbow.length];
+          // Tail fades out after head: 20% lag
+          if (normalizedLife > 0.7) alpha *= Math.max(0, 1 - (normalizedLife - 0.7 - 0.2) / 0.3);
+          tailColors.setXYZW(j, (gradColor >> 16 & 255) / 255, (gradColor >> 8 & 255) / 255, (gradColor & 255) / 255, alpha);
+        }
+        tailColors.needsUpdate = true;
+        // --- Animate head: color/size/brightness/flicker/DOF ---
+        // Color: blue/white to yellow/orange, with flicker
+        let headColor;
+        if (normalizedLife < 0.5) {
+          headColor = new THREE.Color(obj.color).lerp(new THREE.Color(0xffc080), normalizedLife*2);
+        } else {
+          headColor = new THREE.Color(0xffc080).lerp(new THREE.Color(0xff4000), (normalizedLife-0.5)*2);
+        }
+        // Flicker: add high-freq noise to color
+        let flicker = 0.85 + 0.3 * Math.sin(Date.now()*0.09 + Math.random()*10);
+        headColor.multiplyScalar(flicker);
+        obj.mesh.material.color.copy(headColor);
+        // Size/brightness: grows, then shrinks, DOF blur for close meteors
+        let scale = 1 + 2 * Math.sin(Math.PI * normalizedLife);
+        let distToCam = obj.mesh.position.length();
+        let dofBlur = distToCam < starMaxDistance * 0.7 ? 0.7 : 1.0;
+        obj.mesh.scale.set(scale * dofBlur, scale * dofBlur, scale * dofBlur);
+        obj.mesh.material.opacity = (0.5 + 0.5 * Math.sin(Math.PI * normalizedLife)) * (obj.mesh.material.baseOpacity || 1) * dofBlur;
+        obj.mesh.material.transparent = true;
+        obj.mesh.material.blending = THREE.AdditiveBlending;
+        obj.tail.material.blending = THREE.AdditiveBlending;
+        // --- Fragmentation: rarely, spawn a fragment meteor ---
+        if (!obj.hasFragmented && normalizedLife > 0.5 && Math.random() < 0.01) {
+          const fragVel = obj.velocity.clone().applyAxisAngle(new THREE.Vector3(0,1,0), (Math.random()-0.5)*0.3);
+          const fragStar = obj.mesh.clone();
+          fragStar.position.copy(obj.mesh.position);
+          fragStar.velocity = fragVel;
+          fragStar.normalizedLife = normalizedLife;
+          fragStar.normalizedLifetime = obj.normalizedLifetime * (0.5 + Math.random()*0.5);
+          fragStar.age = obj.age;
+          fragStar.material = obj.mesh.material.clone();
+          // Shorter trail
+          const fragTrailPoints = obj.trailPoints.slice();
+          const fragTailGeo = new THREE.BufferGeometry().setFromPoints(fragTrailPoints);
+          fragTailGeo.setAttribute('color', obj.tail.geometry.getAttribute('color').clone());
+          const fragTailMat = obj.tail.material.clone();
+          const fragTail = new THREE.Line(fragTailGeo, fragTailMat);
+          fragTail.position.copy(fragStar.position);
+          scene.add(fragStar);
+          scene.add(fragTail);
+          shootingStars.push({ mesh: fragStar, tail: fragTail, velocity: fragStar.velocity, dir: obj.dir, age: fragStar.age, normalizedLifetime: fragStar.normalizedLifetime, trailPoints: fragTrailPoints, color: obj.color, brightness: obj.brightness, hasFragmented: true });
+          obj.hasFragmented = true;
+        }
+        // --- Spark burst: rare explosion at end of life ---
+        if (!obj.hasSparked && normalizedLife > 0.95 && Math.random() < 0.1) {
+          for (let s = 0; s < 8 + Math.floor(Math.random()*8); s++) {
+            const sparkGeo = new THREE.SphereGeometry(0.5 + Math.random()*0.5, 8, 8);
+            const sparkMat = new THREE.MeshBasicMaterial({ color: 0xfff6c0, transparent: true, opacity: 1, blending: THREE.AdditiveBlending });
+            const spark = new THREE.Mesh(sparkGeo, sparkMat);
+            spark.position.copy(obj.mesh.position);
+            // Random velocity
+            spark.sparkVel = new THREE.Vector3(Math.random()-0.5, Math.random()-0.5, Math.random()-0.5).normalize().multiplyScalar(0.5 + Math.random()*1.2);
+            spark.sparkLife = 12 + Math.random()*10;
+            spark.sparkAge = 0;
+            scene.add(spark);
+            // Animate spark in main loop
+            if (!window._starSparks) window._starSparks = [];
+            window._starSparks.push(spark);
+          }
+          obj.hasSparked = true;
+        }
+        // --- Flash: rare bright sphere at endpoint ---
+        if (!obj.hasFlashed && normalizedLife > 0.98 && Math.random() < 0.2) {
+          const flashGeo = new THREE.SphereGeometry(1, 16, 16);
+          const flashMat = new THREE.MeshBasicMaterial({ color: 0xffffee, transparent: true, opacity: 0.8, blending: THREE.AdditiveBlending });
+          const flash = new THREE.Mesh(flashGeo, flashMat);
+          flash.position.copy(obj.mesh.position);
+          scene.add(flash);
+          // Animate flash in main loop
+          if (!window._starFlashes) window._starFlashes = [];
+          window._starFlashes.push({ mesh: flash, age: 0 });
+          obj.hasFlashed = true;
+        }
+        // Remove when normalizedLife is over or out of bounds
+        const dist = obj.mesh.position.distanceTo(camera.position);
+        if (normalizedLife >= 1.0 || dist > starMaxDistance || obj.mesh.material.opacity <= 0.01) {
+          scene.remove(obj.mesh);
+          scene.remove(obj.tail);
+          shootingStars.splice(i, 1);
+        }
+      }
+      // Animate sparks
+      if (window._starSparks) {
+        for (let i = window._starSparks.length - 1; i >= 0; i--) {
+          const spark = window._starSparks[i];
+          spark.position.add(spark.sparkVel);
+          spark.sparkAge++;
+          spark.material.opacity *= 0.85;
+          if (spark.sparkAge > spark.sparkLife) {
+            scene.remove(spark);
+            window._starSparks.splice(i, 1);
+          }
+        }
+      }
+      // Animate flashes
+      if (window._starFlashes) {
+        for (let i = window._starFlashes.length - 1; i >= 0; i--) {
+          const flash = window._starFlashes[i];
+          flash.mesh.scale.multiplyScalar(1.15);
+          flash.mesh.material.opacity *= 0.85;
+          flash.age++;
+          if (flash.age > 10) {
+            scene.remove(flash.mesh);
+            window._starFlashes.splice(i, 1);
+          }
+        }
+      }
 
-      const posArr = geometry.attributes.position.array
-      const sqDist = starMaxDistance * starMaxDistance
+      // --- Starfield logic ---
+      const posArr = geometry.attributes.position.array;
+      const sqDist = starMaxDistance * starMaxDistance;
       for (let i = 0; i < posArr.length; i += 3) {
-        const dx = posArr[i] - camera.position.x
-        const dy = posArr[i + 1] - camera.position.y
-        const dz = posArr[i + 2] - camera.position.z
+        const dx = posArr[i] - camera.position.x;
+        const dy = posArr[i + 1] - camera.position.y;
+        const dz = posArr[i + 2] - camera.position.z;
         if (dx*dx + dy*dy + dz*dz > sqDist) {
-          const theta = Math.random() * 2 * Math.PI
-          const phi = Math.acos(2 * Math.random() - 1)
+          const theta = Math.random() * 2 * Math.PI;
+          const phi = Math.acos(2 * Math.random() - 1);
           posArr[i] = camera.position.x + starMaxDistance * Math.sin(phi) * Math.cos(theta)
           posArr[i+1] = camera.position.y + starMaxDistance * Math.sin(phi) * Math.sin(theta)
           posArr[i+2] = camera.position.z + starMaxDistance * Math.cos(phi)
@@ -197,31 +328,28 @@ const Starfield = () => {
       stars.rotation.x += 0.0001
       stars.rotation.y += 0.00015
 
-      // Remove extra random spawn for shooting stars
-      // (no additional random spawns, only above logic)
       for (let i = shootingStars.length - 1; i >= 0; i--) {
         const obj = shootingStars[i];
-        // Move shooting star in world space, independent of camera
         obj.mesh.position.add(obj.velocity);
-        // Update tail points to follow star's path in world space
-        for (let j = obj.tailPoints.length - 1; j > 0; j--) {
-          obj.tailPoints[j].copy(obj.tailPoints[j - 1]);
+        obj.tail.position.copy(obj.mesh.position);
+        // Update tail to always point opposite of velocity
+        const tailLen = tailLength * 3;
+        obj.tail.geometry.setFromPoints([
+          new THREE.Vector3(0,0,0),
+          obj.velocity.clone().normalize().multiplyScalar(-tailLen)
+        ]);
+        // Fade out as it gets far away
+        const dist = obj.mesh.position.distanceTo(camera.position);
+        const fadeStart = starMaxDistance * 0.5;
+        if (dist > fadeStart) {
+          const fade = 1 - (dist - fadeStart) / (starMaxDistance - fadeStart);
+          obj.mesh.material.opacity = Math.max(0, fade);
+          obj.mesh.material.transparent = true;
+          obj.tail.material.opacity = Math.max(0, fade * 0.8);
+          obj.tail.material.transparent = true;
         }
-        obj.tailPoints[0] = obj.mesh.position.clone();
-        obj.tail.geometry.setFromPoints(obj.tailPoints);
-        // Update tail alpha gradient
-        const colors = obj.tail.geometry.attributes.color.array;
-        for (let j = 0; j < obj.tailPoints.length; j++) {
-          // Alpha fades out with both tail position and star life
-          colors[j * 4 + 3] = (1 - j / (obj.tailPoints.length - 1)) * 0.7 * Math.max(0, obj.mesh.life);
-        }
-        obj.tail.geometry.attributes.color.needsUpdate = true;
-        obj.tail.position.set(0, 0, 0); // tail points are absolute
-        obj.tail.life -= 0.01;
-        obj.mesh.life -= 0.01;
-        // Fade the tail smoothly based on life
-        obj.tail.material.opacity = 1.0;
-        if (obj.mesh.life <= 0) {
+        // Remove when out of bounds or fully faded
+        if (dist > starMaxDistance || obj.mesh.material.opacity <= 0.01) {
           scene.remove(obj.mesh);
           scene.remove(obj.tail);
           shootingStars.splice(i, 1);
