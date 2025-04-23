@@ -16,9 +16,11 @@
     "@react-three/fiber": "9.1.2",
     "@react-three/postprocessing": "^3.0.4",
     "next": "^14.0.0",
+    "postprocessing": "^6.37.2",
     "react": "18.2.0",
     "react-dom": "18.2.0",
-    "three": "^0.155.0"
+    "three": "^0.157.0",
+    "three-stdlib": "^2.35.15"
   },
   "devDependencies": {
     "gh-pages": "^4.0.0"
