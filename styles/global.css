@@ -134,6 +134,74 @@ body {
   padding: 100px 0;
 }
 
+/* Modern section headers for My Work & Contact */
+.section h2 {
+  font-family: 'Poppins', 'Montserrat', Arial, sans-serif;
+  font-size: 2.7rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  color: #fff;
+  text-shadow: 0 4px 24px rgba(255,107,168,0.13), 0 1px 0 #fff2;
+  position: relative;
+  margin-bottom: 1.5rem;
+  display: inline-block;
+}
+.section h2::after {
+  content: '';
+  display: block;
+  margin: 0.5rem auto 0 auto;
+  width: 64px;
+  height: 5px;
+  border-radius: 3px;
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+  opacity: 0.85;
+}
+
+/* Project card glassmorphism & hover */
+.project-grid .card {
+  background: rgba(255,255,255,0.08);
+  border: 1.5px solid rgba(255,255,255,0.13);
+  box-shadow: 0 8px 32px 0 rgba(30,34,44,0.18), 0 1.5px 8px 0 rgba(255,107,168,0.08);
+  backdrop-filter: blur(14px) saturate(1.4);
+  border-radius: 18px;
+  padding: 2.1rem 1.4rem 1.6rem 1.4rem;
+  transition: transform 0.26s cubic-bezier(.6,.2,.1,1), box-shadow 0.26s cubic-bezier(.6,.2,.1,1);
+  position: relative;
+  overflow: hidden;
+}
+.project-grid .card:hover {
+  transform: translateY(-8px) scale(1.035) rotate(-0.5deg);
+  box-shadow: 0 18px 48px 0 rgba(255,107,168,0.18), 0 6px 32px 0 rgba(30,34,44,0.22);
+  border-color: var(--primary-color);
+}
+
+/* Futuristic gradient card titles */
+.project-grid .card h3 {
+  font-family: 'Montserrat', 'Poppins', Arial, sans-serif;
+  font-size: 1.5rem;
+  font-weight: 700;
+  background: linear-gradient(90deg, var(--primary-color), var(--accent-color), #80ffea);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
+  -webkit-text-fill-color: transparent;
+  letter-spacing: 0.03em;
+  margin-bottom: 0.7rem;
+  text-shadow: 0 2px 12px rgba(255,107,168,0.09);
+  filter: brightness(1.15) saturate(1.2);
+}
+
+/* Contact form section header match */
+.contact.section h2 {
+  background: none;
+  color: #fff;
+  -webkit-text-fill-color: #fff;
+  text-shadow: 0 4px 24px rgba(128,255,234,0.10), 0 1px 0 #fff2;
+}
+
+
 .project-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
@@ -177,11 +245,60 @@ body {
 
 .about {
   background: linear-gradient(135deg, rgba(255,107,107,0.7), rgba(255,168,168,0.7));
-  border-radius: 12px;
-  padding: 3rem 2rem;
-  margin: 2rem 0;
-  box-shadow: 0 4px 20px rgba(255,107,107,0.4);
+  border-radius: 22px;
+  padding: 0;
+  margin: 0;
+  box-shadow: 0 8px 40px 0 rgba(255,107,168,0.18), 0 2px 16px 0 rgba(30,34,44,0.22);
   transition: transform var(--transition-speed) ease-out;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 340px;
+}
+
+.about.section h2 {
+  width: 100%;
+  text-align: center;
+  margin-bottom: 1.1rem;
+  display: block;
+}
+
+.about-hero {
+  font-family: 'Montserrat', 'Poppins', Arial, sans-serif;
+  font-size: 2.2rem;
+  font-weight: 700;
+  letter-spacing: 0.045em;
+  line-height: 1.25;
+  text-align: center;
+  margin: 0 auto;
+  padding: 0 2.5rem 0 2.5rem;
+  color: #fff;
+  background: linear-gradient(270deg, var(--primary-color), var(--accent-color), #80ffea, #fff 70%);
+  background-size: 300% 300%;
+  animation: about-gradient-move 6s ease-in-out infinite;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  text-shadow: 0 2px 18px rgba(255,107,168,0.13), 0 1px 0 #fff2;
+  filter: brightness(1.13) saturate(1.17);
+  max-width: 900px;
+  border-radius: 0;
+  box-shadow: none;
+  transition: all 0.4s cubic-bezier(.6,.2,.1,1);
+}
+
+@keyframes about-gradient-move {
+  0% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
+  100% { background-position: 0% 50%; }
+}
+
+@media (max-width: 600px) {
+  .about-hero {
+    font-size: 1.2rem;
+    padding: 0 1rem;
+  }
 }
 .about:hover {
   transform: scale(1.02);

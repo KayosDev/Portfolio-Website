@@ -120,20 +120,20 @@ export default function Home() {
 
         <animated.section style={useSpring({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 }, delay: 600, config: { tension: 180, friction: 24 } })} id="about" className="about section">
           <h2>About Me</h2>
-          <p>
-            I'm a co-founder of Endless Nights studios and i'm a passionate Gameplay and Engine Developer.
-          </p>
+          <blockquote className="about-hero">
+            I'm a co-founder of Endless Nights studios and I'm a passionate Gameplay and Engine Developer.
+          </blockquote>
         </animated.section>
 
         <animated.section style={useSpring({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 }, delay: 800, config: { tension: 180, friction: 24 } })} id="projects" className="projects section">
-          <h2>Projects</h2>
+          <h2>My Work</h2>
           <div className="project-grid">
             <Link href="/projects/one">
               <animated.div
                 className="card"
                 style={useSpring({ from: { scale: 1 }, to: { scale: 1 }, config: { tension: 180, friction: 24 } })}
               >
-                <h3>Project One</h3>
+                <h3>Web App: Nebula</h3>
                 <p>A modern web app with animations.</p>
               </animated.div>
             </Link>
@@ -142,7 +142,7 @@ export default function Home() {
                 className="card"
                 style={useSpring({ from: { scale: 1 }, to: { scale: 1 }, config: { tension: 180, friction: 24 } })}
               >
-                <h3>Project Two</h3>
+                <h3>Portfolio Redesign</h3>
                 <p>A sleek portfolio design.</p>
               </animated.div>
             </Link>
@@ -151,7 +151,7 @@ export default function Home() {
                 className="card"
                 style={useSpring({ from: { scale: 1 }, to: { scale: 1 }, config: { tension: 180, friction: 24 } })}
               >
-                <h3>Project Three</h3>
+                <h3>Visual Playground</h3>
                 <p>Another project showcase.</p>
               </animated.div>
             </Link>
@@ -159,7 +159,7 @@ export default function Home() {
         </animated.section>
 
         <animated.section style={useSpring({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 }, delay: 1000, config: { tension: 180, friction: 24 } })} id="contact" className="contact section">
-          <h2>Contact Me</h2>
+          <h2>Get in Touch</h2>
           <form className="contact-form">
             <input type="text" placeholder="Your Name" required />
             <input type="email" placeholder="Your Email" required />
