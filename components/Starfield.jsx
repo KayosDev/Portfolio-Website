@@ -72,27 +72,43 @@ const Starfield = () => {
 
     const tailLength = 50
     const shootingStars = []
+    let shootingStarCooldown = 0; // Prevent too many at once
+    // Enhanced shooting star effect
     function spawnShootingStar() {
       const dir = new THREE.Vector3(Math.random()*2-1, Math.random()*2-1, Math.random()*2-1).normalize();
-      const geo = new THREE.SphereGeometry(1, 8, 8);
-      const mat = new THREE.MeshBasicMaterial({ color: 0xffffaa });
+      const speed = starSpeed * (300 + Math.random() * 200); // Faster, random speed
+      const geo = new THREE.SphereGeometry(2, 16, 16); // Slightly larger
+      const mat = new THREE.MeshBasicMaterial({ color: 0xffffee, emissive: 0xffffee, emissiveIntensity: 2 });
       const star = new THREE.Mesh(geo, mat);
       star.position.copy(camera.position);
-      star.velocity = dir.clone().multiplyScalar(starSpeed * 200);
-      scene.add(star);
-      const points = [new THREE.Vector3(0,0,0), dir.clone().negate().multiplyScalar(tailLength)];
+      star.velocity = dir.clone().multiplyScalar(speed);
+      star.life = 1.0; // For fading
+
+      // Long, glowing tail
+      const tailLen = tailLength * 3 + Math.random() * 50;
+      const points = [new THREE.Vector3(0,0,0), dir.clone().negate().multiplyScalar(tailLen)];
       const tailGeo = new THREE.BufferGeometry().setFromPoints(points);
-      const tailMat = new THREE.LineBasicMaterial({ color: 0xffffaa, transparent: true, opacity: 0.6 });
+      const tailMat = new THREE.LineBasicMaterial({ color: 0xffffee, transparent: true, opacity: 0.9 });
       const tail = new THREE.Line(tailGeo, tailMat);
       tail.position.copy(star.position);
+      tail.life = 1.0;
+      scene.add(star);
       scene.add(tail);
-      shootingStars.push({ mesh: star, tail, velocity: star.velocity });
+      shootingStars.push({ mesh: star, tail, velocity: star.velocity, dir, fade: false });
     }
 
     const animate = () => {
       requestAnimationFrame(animate)
       camera.rotation.y += (targetY - camera.rotation.y) * damping
       camera.translateZ(-starSpeed)
+
+      // Spawn shooting star occasionally, but not too frequently
+      if (shootingStarCooldown <= 0 && Math.random() < 0.08) { // much more common
+        spawnShootingStar();
+        shootingStarCooldown = 15 + Math.random() * 20; // 0.25-0.5 seconds
+      } else if (shootingStarCooldown > 0) {
+        shootingStarCooldown--;
+      }
 
       const posArr = geometry.attributes.position.array
       const sqDist = starMaxDistance * starMaxDistance
@@ -136,11 +152,24 @@ const Starfield = () => {
         const obj = shootingStars[i];
         obj.mesh.position.add(obj.velocity);
         obj.tail.position.copy(obj.mesh.position);
+        // Update tail to always point opposite of velocity
+        const tailLen = tailLength * 3;
         obj.tail.geometry.setFromPoints([
           new THREE.Vector3(0,0,0),
-          obj.velocity.clone().normalize().multiplyScalar(tailLength)
+          obj.velocity.clone().normalize().multiplyScalar(-tailLen)
         ]);
-        if (obj.mesh.position.distanceTo(camera.position) > starMaxDistance) {
+        // Fade out as it gets far away
+        const dist = obj.mesh.position.distanceTo(camera.position);
+        const fadeStart = starMaxDistance * 0.5;
+        if (dist > fadeStart) {
+          const fade = 1 - (dist - fadeStart) / (starMaxDistance - fadeStart);
+          obj.mesh.material.opacity = Math.max(0, fade);
+          obj.mesh.material.transparent = true;
+          obj.tail.material.opacity = Math.max(0, fade * 0.8);
+          obj.tail.material.transparent = true;
+        }
+        // Remove when out of bounds or fully faded
+        if (dist > starMaxDistance || obj.mesh.material.opacity <= 0.01) {
           scene.remove(obj.mesh);
           scene.remove(obj.tail);
           shootingStars.splice(i, 1);
