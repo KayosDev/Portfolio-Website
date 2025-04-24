@@ -6,7 +6,7 @@ import Starfield from '../components/Starfield'
 
 export default function Home() {
   const [uiVisible, setUiVisible] = useState(true);
-  const [showHint, setShowHint] = useState(true);
+  const [showHint, setShowHint] = useState(false);
 
   // Visually stunning fade/blur/scale animation for UI
   const uiSpring = useSpring({
@@ -60,6 +60,17 @@ export default function Home() {
     document.addEventListener('fullscreenchange', handleFullscreenChange);
     return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
   }, []);
+
+  // Show hint after user scrolls past threshold
+  useEffect(() => {
+    const handleScroll = () => {
+      if (window.scrollY > 100 && !showHint) {
+        setShowHint(true);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, [showHint]);
 
   // Auto-hide hint after 5 seconds
   useEffect(() => {
