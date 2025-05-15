@@ -1,12 +1,17 @@
-import React, { useState, useEffect, useCallback } from 'react'
+import React, { useState, useEffect, useCallback, useRef } from 'react'
 import Head from 'next/head'
-import { useSpring, animated, easings } from '@react-spring/web'
+import { useSpring, animated, easings, config } from '@react-spring/web'
 import Link from 'next/link'
 import Starfield from '../components/Starfield'
+import SocialFooter from '../components/SocialFooter'
+import PixelText from '../components/PixelText'
+import ScrollReveal from '../components/ScrollReveal'
+import ProjectCard3D from '../components/ProjectCard3D'
 
 export default function Home() {
   const [uiVisible, setUiVisible] = useState(true);
   const [showHint, setShowHint] = useState(false);
+  const heroRef = useRef(null);
 
   // Visually stunning fade/blur/scale animation for UI
   const uiSpring = useSpring({
@@ -15,14 +20,14 @@ export default function Home() {
     scale: uiVisible ? 1 : 1.05,
     filter: uiVisible ? 'blur(0px)' : 'blur(16px)',
     pointerEvents: uiVisible ? 'auto' : 'none',
-    config: { duration: uiVisible ? 700 : 400, easing: easings.easeInOutCubic },
+    config: { duration: uiVisible ? 400 : 300, easing: easings.easeInOutCubic },
   });
 
   // Hint fade/slide animation
   const hintSpring = useSpring({
     opacity: showHint ? 0.93 : 0,
     y: showHint ? 0 : 40,
-    config: { duration: 600, easing: easings.easeInOutCubic },
+    config: { duration: 400, easing: easings.easeInOutCubic },
   });
 
   // Fullscreen handler
@@ -36,6 +41,38 @@ export default function Home() {
       setUiVisible(true);
       setTimeout(() => setShowHint(true), 1000); // Optionally show hint again after exiting
     }
+  }, []);
+
+  // Add tilt effect to hero section
+  useEffect(() => {
+    const hero = heroRef.current;
+    if (!hero) return;
+
+    const handleMouseMove = (e) => {
+      const rect = hero.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const centerX = rect.width / 2;
+      const centerY = rect.height / 2;
+      
+      const tiltX = (y - centerY) / 50;
+      const tiltY = (centerX - x) / 50;
+      
+      hero.style.transform = `rotateX(${tiltX}deg) rotateY(${tiltY}deg)`;
+    };
+    
+    const handleMouseLeave = () => {
+      hero.style.transform = 'rotateX(0deg) rotateY(0deg)';
+    };
+    
+    hero.addEventListener('mousemove', handleMouseMove);
+    hero.addEventListener('mouseleave', handleMouseLeave);
+    
+    return () => {
+      hero.removeEventListener('mousemove', handleMouseMove);
+      hero.removeEventListener('mouseleave', handleMouseLeave);
+    };
   }, []);
 
   // Listen for "F" key
@@ -86,6 +123,7 @@ export default function Home() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
       <Starfield />
+      
       {/* Stunning, reserved hint */}
       <animated.div
         style={{
@@ -117,69 +155,107 @@ export default function Home() {
         </span>
       </animated.div>
       <animated.div style={uiSpring} className="container">
-        <animated.header className="hero" style={useSpring({ from: { opacity: 0 }, to: { opacity: 1 }, delay: 200, config: { tension: 180, friction: 24 } })}>
-          <h1>
-            Welcome, I'm <span className="highlight">KayosDev</span>
-          </h1>
-          <animated.p
-            className="hero-subtitle"
-            style={useSpring({ from: { opacity: 0, scale: 0.5 }, to: { opacity: 1, scale: 1 }, delay: 400, config: { tension: 180, friction: 24 } })}
-          >
-            Gameplay and Engine Developer
-          </animated.p>
-        </animated.header>
+        <div className="hero-container" id="home">
+          <div className="hero-glow"></div>
+          <animated.header className="hero" style={useSpring({ from: { opacity: 0 }, to: { opacity: 1 }, delay: 100, config: { tension: 280, friction: 20 } })}>
+            <div className="hero-content" ref={heroRef}>
+              <div className="hero-title-wrapper">
+                <animated.h1
+                  style={useSpring({
+                    from: { opacity: 0, y: 30 },
+                    to: { opacity: 1, y: 0 },
+                    delay: 150,
+                    config: { tension: 280, friction: 18 }
+                  })}
+                >
+                  <span className="hero-title-main" data-text="Welcome, I'm">Welcome, I'm</span>
+                  <animated.span 
+                    className="highlight"
+                    style={useSpring({
+                      from: { scale: 0.8, opacity: 0 },
+                      to: { scale: 1, opacity: 1 },
+                      delay: 400,
+                      config: { mass: 1.5, tension: 280, friction: 15 }
+                    })}
+                  >
+                    KayosDev
+                  </animated.span>
+                </animated.h1>
+              </div>
+              <PixelText 
+                text="GAMEPLAY & ENGINE<br/>DEVELOPER" 
+                delay={600} 
+                className="hero-subtitle"
+              />
+            </div>
+          </animated.header>
+        </div>
 
-        <animated.section style={useSpring({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 }, delay: 600, config: { tension: 180, friction: 24 } })} id="about" className="about section">
+        <ScrollReveal 
+          threshold={0.15} 
+          triggerOnce={true} 
+          delay={200} 
+          direction="up" 
+          distance={80}
+          duration={700}
+          tension={320}
+          friction={20}
+          className="about section"
+          id="about"
+        >
           <h2>About Me</h2>
-          <blockquote className="about-hero">
-            I'm a co-founder of Endless Nights studios and I'm a passionate Gameplay and Engine Developer.
-          </blockquote>
-        </animated.section>
+          <div className="about-hero">
+            "I create immersive gameplay experiences and optimize game engines for performance, bringing interactive worlds to life with code."
+          </div>
+        </ScrollReveal>
 
-        <animated.section style={useSpring({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 }, delay: 800, config: { tension: 180, friction: 24 } })} id="projects" className="projects section">
+        <ScrollReveal 
+          threshold={0.15} 
+          triggerOnce={true} 
+          delay={200} 
+          direction="up" 
+          distance={80}
+          duration={700}
+          tension={320}
+          friction={20}
+          className="projects section"
+          id="projects"
+        >
           <h2>My Work</h2>
           <div className="project-grid">
-            <Link href="/projects/one">
-              <animated.div
-                className="card"
-                style={useSpring({ from: { scale: 1 }, to: { scale: 1 }, config: { tension: 180, friction: 24 } })}
-              >
-                <h3>Web App: Nebula</h3>
-                <p>A modern web app with animations.</p>
-              </animated.div>
-            </Link>
-            <Link href="/projects/two">
-              <animated.div
-                className="card"
-                style={useSpring({ from: { scale: 1 }, to: { scale: 1 }, config: { tension: 180, friction: 24 } })}
-              >
-                <h3>Portfolio Redesign</h3>
-                <p>A sleek portfolio design.</p>
-              </animated.div>
-            </Link>
-            <Link href="/projects/three">
-              <animated.div
-                className="card"
-                style={useSpring({ from: { scale: 1 }, to: { scale: 1 }, config: { tension: 180, friction: 24 } })}
-              >
-                <h3>Visual Playground</h3>
-                <p>Another project showcase.</p>
-              </animated.div>
-            </Link>
+              <ProjectCard3D
+                title="Web App: Nebula"
+                description="A modern web app with stunning animations and interactive features. Built with React and Three.js."
+                link="/projects/one"
+                glowColor="rgba(255, 107, 107, 0.6)"
+                maxTilt={20}
+              />
+              <ProjectCard3D
+                title="Portfolio Redesign"
+                description="A sleek portfolio design with immersive 3D effects and responsive layout for optimal viewing on any device."
+                link="/projects/two"
+                glowColor="rgba(128, 255, 234, 0.6)"
+                maxTilt={20}
+              />
+              <ProjectCard3D
+                title="Visual Playground"
+                description="Experimental visual effects showcase combining WebGL, particle systems and advanced animation techniques."
+                link="/projects/three"
+                glowColor="rgba(255, 255, 128, 0.6)"
+                maxTilt={20}
+              />
           </div>
-        </animated.section>
+        </ScrollReveal>
 
-        <animated.section style={useSpring({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 }, delay: 1000, config: { tension: 180, friction: 24 } })} id="contact" className="contact section">
-          <h2>Get in Touch</h2>
-          <form className="contact-form">
-            <input type="text" placeholder="Your Name" required />
-            <input type="email" placeholder="Your Email" required />
-            <textarea placeholder="Your Message" rows={5} required />
-            <button type="submit" className="btn">
-              Send Message
-            </button>
-          </form>
-        </animated.section>
+        <ScrollReveal 
+          threshold={0.1} 
+          triggerOnce={false} 
+          delay={300} 
+          direction="up" 
+          distance={60}
+        >
+          <SocialFooter />
+        </ScrollReveal>
       </animated.div>
     </>
   )

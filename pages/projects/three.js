@@ -1,20 +1,35 @@
 import React from 'react'
 import Head from 'next/head'
-import { useSpring, animated } from '@react-spring/web'
-import Link from 'next/link'
+import { useRouter } from 'next/router'
+import PrimsSpanningTree from '../../components/PrimsSpanningTree'
 
 export default function ProjectThree() {
+  const router = useRouter();
+
+  const handleClick = () => {
+    router.push('/');
+  };
+
   return (
     <>
       <Head>
-        <title>Project Three - KayosDev</title>
+        <title>Minimum Spanning Tree - KayosDev</title>
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      <animated.div style={useSpring({ from: { opacity: 0, y: 50 }, to: { opacity: 1, y: 0 }, config: { tension: 180, friction: 24 } })} className="container section">
-        <h1>Project Three</h1>
-        <p>This is a placeholder page for Project Three.</p>
-        <Link href="/">← Back to Home</Link>
-      </animated.div>
+      
+      <div 
+        onClick={handleClick}
+        style={{ 
+          position: 'fixed', 
+          top: 0, 
+          left: 0, 
+          width: '100%', 
+          height: '100%', 
+          cursor: 'pointer',
+          zIndex: 10
+        }}
+      />
+      <PrimsSpanningTree />
     </>
   )
 }

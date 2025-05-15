@@ -425,7 +425,6 @@ if (closePositions.length > 0) {
       }
       
       // --- POST-PROCESSING PIPELINE ---
-      // --- POST-PROCESSING PIPELINE ---
       composer.render(); // Only RenderPass enabled for debugging
       // (bloom, FXAA, FilmPass are NOT added)
       // shootingStarComposer, caComposer remain disabled for now
@@ -612,6 +611,7 @@ if (closePositions.length > 0) {
             if (!window._sparkles) window._sparkles = [];
             window._sparkles.push(sparkle);
           }
+          // if (window._sparkles == sparkle.damping)
           if (spectacular) {
             // Add a big flash
             const flashGeo = new THREE.SphereGeometry(6, 24, 24);
@@ -641,6 +641,9 @@ if (closePositions.length > 0) {
           scene.add(fragTail);
           shootingStars.push({ mesh: fragStar, tail: fragTail, velocity: fragStar.velocity, dir: obj.dir, age: fragStar.age, normalizedLifetime: fragStar.normalizedLifetime, trailPoints: fragTrailPoints, color: obj.color, brightness: obj.brightness, hasFragmented: true });
           obj.hasFragmented = true;
+          if(obj.hasFragmented){
+            console.log(obj.postion);
+          }
         }
         // Spark burst
         if (!obj.hasSparked && normalizedLife > 0.95 && Math.random() < 0.1) {
